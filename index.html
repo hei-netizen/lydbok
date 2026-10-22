@@ -1,0 +1,601 @@
+<!doctype html>
+<html lang="no">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Lydbok</title>
+<meta name="theme-color" content="#ebdfc6">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Oswald:wght@500;700&display=swap" rel="stylesheet">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Lydbok">
+<link rel="apple-touch-icon" href="ikon-180.png">
+<link rel="icon" type="image/png" href="favicon.png">
+<style>
+  /* som pocketomslaget: gulnet papir, kraftig svart trykk, rød «BANCO» */
+  :root {
+    --bg: #ebdfc6;
+    --flate: #e2d3b4;
+    --flate-2: #d8c6a2;
+    --tekst: #1d1813;
+    --dempet: #6e6252;
+    --aksent: #c4161c;
+    --aksent-trykk: #a31217;
+    --linje: rgba(29, 24, 19, .18);
+    --display: "Alfa Slab One", "Rockwell Extra Bold", "Rockwell", Georgia, serif;
+    --kondensert: "Oswald", "Avenir Next Condensed", "Arial Narrow", sans-serif;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  [hidden] { display: none !important; }
+  html, body { margin: 0; background: var(--bg); color: var(--tekst); }
+  body {
+    font: 16px/1.4 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+    min-height: 100dvh;
+    padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
+    overscroll-behavior: none;
+  }
+  .bakgrunn {
+    position: fixed; inset: 0; z-index: -1;
+    background:
+      radial-gradient(140% 90% at 50% 10%, rgba(255, 250, 235, .55) 0%, transparent 60%),
+      radial-gradient(120% 80% at 50% 110%, rgba(150, 110, 60, .25) 0%, transparent 60%),
+      var(--bg);
+  }
+  main { max-width: 460px; margin: 0 auto; padding: 18px 20px 28px; display: flex; flex-direction: column; min-height: 100dvh; }
+  .topp { display: flex; justify-content: space-between; align-items: center; color: var(--dempet);
+    font: 500 13px var(--kondensert); letter-spacing: .14em; text-transform: uppercase;
+    border-bottom: 2px solid var(--tekst); padding-bottom: 8px; }
+  .topp b { color: var(--tekst); font-weight: 700; }
+  .omslag {
+    margin: 22px auto 0; width: min(56vw, 240px); aspect-ratio: 594 / 1000; border-radius: 3px 6px 6px 3px;
+    background: #d9c9a8 center / cover no-repeat;
+    box-shadow: 0 22px 40px rgba(60, 40, 15, .35), 0 3px 8px rgba(60, 40, 15, .3), inset 3px 0 0 rgba(0,0,0,.08);
+  }
+  .info { margin-top: 24px; text-align: center; }
+  .info .kicker { font: 700 13px/1.15 var(--kondensert); letter-spacing: .08em; text-transform: uppercase; }
+  .info h1 { font: 400 46px/1 var(--display); color: var(--aksent); margin: 4px 0 0; letter-spacing: .02em; text-transform: uppercase; }
+  .info .forf { margin-top: 6px; font: 700 14px var(--kondensert); letter-spacing: .16em; text-transform: uppercase; color: var(--aksent); }
+  .kapittel-knapp {
+    margin-top: 14px; width: 100%; display: flex; align-items: center; gap: 10px; text-align: left;
+    background: transparent; border: 0; border-top: 1px solid var(--linje); border-bottom: 1px solid var(--linje);
+    color: var(--tekst); border-radius: 0; padding: 12px 4px; font: inherit; cursor: pointer;
+  }
+  .kapittel-knapp .nr { color: var(--aksent); font: 700 13px var(--kondensert); letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; }
+  .kapittel-knapp .tt { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
+  .kapittel-knapp svg { flex: none; opacity: .7; }
+
+  .spol { margin-top: 22px; }
+  input[type=range] {
+    -webkit-appearance: none; appearance: none; width: 100%; height: 22px; background: transparent; margin: 0; touch-action: none;
+  }
+  input[type=range]::-webkit-slider-runnable-track {
+    height: 4px; border-radius: 2px;
+    background: linear-gradient(to right, var(--tekst) var(--p, 0%), rgba(29,24,19,.18) var(--p, 0%));
+  }
+  input[type=range]::-moz-range-track { height: 4px; border-radius: 2px; background: rgba(29,24,19,.18); }
+  input[type=range]::-moz-range-progress { height: 4px; border-radius: 2px; background: var(--tekst); }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%; background: var(--aksent); margin-top: -5px; border: 0;
+  }
+  input[type=range]::-moz-range-thumb { width: 14px; height: 14px; border-radius: 50%; background: var(--aksent); border: 0; }
+  .tider { display: flex; justify-content: space-between; color: var(--dempet); font-size: 12px; font-variant-numeric: tabular-nums; margin-top: 2px; }
+
+  .kontroller { display: flex; align-items: center; justify-content: space-between; margin: 18px 6px 0; }
+  .ikon { background: none; border: 0; color: var(--tekst); padding: 8px; cursor: pointer; position: relative; display: grid; place-items: center; }
+  .ikon:active { transform: scale(.94); }
+  .ikon .sek { position: absolute; font-size: 10px; font-weight: 700; top: 50%; left: 50%; transform: translate(-50%, -38%); }
+  .spill {
+    width: 76px; height: 76px; border-radius: 50%; border: 0; background: var(--aksent); color: #f6ecd6;
+    display: grid; place-items: center; cursor: pointer; box-shadow: 0 10px 24px rgba(196, 22, 28, .3);
+    transition: transform .12s ease;
+  }
+  .spill:active { transform: scale(.95); background: var(--aksent-trykk); }
+  .spill:disabled { background: var(--flate-2); color: var(--dempet); box-shadow: none; }
+
+  .verktoy { display: flex; justify-content: space-around; margin-top: 22px; }
+  .verktoy button {
+    background: none; border: 0; color: var(--dempet); font: inherit; font-size: 12px; display: flex; flex-direction: column;
+    align-items: center; gap: 4px; cursor: pointer; padding: 6px 10px; min-width: 72px;
+  }
+  .verktoy button b { color: var(--tekst); font: 700 16px var(--kondensert); height: 22px; display: grid; place-items: center; }
+  .verktoy button.aktiv b { color: var(--aksent); }
+  .fremdrift-bok { margin-top: auto; padding-top: 26px; color: var(--dempet); font-size: 13px; text-align: center; }
+
+  .tom { margin-top: 18px; background: var(--flate); border-radius: 8px; padding: 14px; color: var(--dempet); font-size: 14px; text-align: center; }
+
+  /* kapittelark */
+  .slor { position: fixed; inset: 0; background: rgba(40,28,12,.4); opacity: 0; pointer-events: none; transition: opacity .25s ease; }
+  .ark {
+    position: fixed; left: 0; right: 0; bottom: 0; max-height: 78dvh; background: var(--bg); border-radius: 18px 18px 0 0;
+    box-shadow: 0 -10px 40px rgba(40,28,12,.25);
+    transform: translateY(100%); transition: transform .32s cubic-bezier(.32, .72, 0, 1); display: flex; flex-direction: column;
+    padding-bottom: env(safe-area-inset-bottom); max-width: 560px; margin: 0 auto;
+  }
+  .apen .slor { opacity: 1; pointer-events: auto; }
+  .apen .ark { transform: none; }
+  .ark .hank { width: 38px; height: 5px; border-radius: 3px; background: rgba(29,24,19,.25); margin: 8px auto 4px; }
+  .ark h2 { font: 400 22px var(--display); margin: 6px 20px 10px; }
+  .ark ol { list-style: none; margin: 0; padding: 0 8px 12px; overflow-y: auto; }
+  .ark li button {
+    width: 100%; display: flex; gap: 12px; align-items: center; background: none; border: 0; color: var(--tekst);
+    font: inherit; text-align: left; padding: 12px; border-radius: 10px; cursor: pointer;
+  }
+  .ark li button:disabled { color: var(--dempet); cursor: default; }
+  .ark li button.na { background: var(--flate-2); }
+  .ark .knr { width: 26px; color: var(--dempet); font-variant-numeric: tabular-nums; font-size: 14px; flex: none; }
+  .ark .na .knr { color: var(--aksent); }
+  .ark .kt { flex: 1; min-width: 0; }
+  .ark .kt div { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ark .kt small { color: var(--dempet); font-size: 12px; }
+  .ark .lager { color: var(--aksent); }
+  .ark .ferdig-merke { width: 18px; height: 18px; flex: none; }
+
+  .bunn-knapper { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
+  .bunn-knapper button { background: none; border: 1px solid var(--linje); color: var(--dempet); border-radius: 8px;
+    padding: 10px; font: 500 13px var(--kondensert); letter-spacing: .04em; cursor: pointer; }
+  #logg-ut { border: 0; padding: 4px; }
+  .ark .offline { color: var(--aksent); font-weight: 700; }
+  #login { position: fixed; inset: 0; z-index: 10; background: var(--bg); display: grid; place-items: center; padding: 24px; }
+  #login form { width: 100%; max-width: 340px; text-align: center; }
+  #login h1 { font: 400 40px var(--display); color: var(--aksent); margin: 0 0 6px; }
+  #login p { color: var(--dempet); margin: 0 0 22px; font-size: 14px; }
+  #login input { width: 100%; font: 18px -apple-system, sans-serif; padding: 14px; border-radius: 10px; border: 2px solid var(--tekst);
+    background: #f6eddb; color: var(--tekst); text-align: center; }
+  #login button { margin-top: 12px; width: 100%; padding: 14px; border-radius: 10px; border: 0; background: var(--aksent); color: #f6ecd6;
+    font: 700 16px var(--kondensert); letter-spacing: .08em; text-transform: uppercase; cursor: pointer; }
+  #login-feil { min-height: 20px; margin-top: 12px; color: var(--aksent); font-size: 14px; }
+</style>
+</head>
+<body>
+<div id="login" hidden>
+  <form id="login-skjema" autocomplete="on">
+    <h1>LYDBOK</h1>
+    <p>Privat. Skriv passordet ditt for å låse opp.</p>
+    <input id="passord" type="password" inputmode="numeric" autocomplete="current-password" placeholder="Passord" required>
+    <button id="logg-inn" type="submit">Lås opp</button>
+    <div id="login-feil"></div>
+  </form>
+</div>
+
+<div class="bakgrunn"></div>
+<main>
+  <div class="topp"><span>Lydbok</span><b id="leser"></b></div>
+  <div class="omslag" id="omslag" role="img" aria-label="Bokomslag"></div>
+
+  <div class="info">
+    <div class="kicker" id="kicker"></div>
+    <h1 id="tittel"></h1>
+    <div class="forf" id="forfatter"></div>
+    <button class="kapittel-knapp" id="apne-kapitler" aria-label="Velg kapittel">
+      <span class="nr" id="kap-nr">–</span><span class="tt" id="kap-tittel">Laster …</span>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+    </button>
+    <div class="tom" id="tom" hidden></div>
+    <div class="tom" id="laster" hidden></div>
+  </div>
+
+  <div class="spol">
+    <input type="range" id="spol" min="0" max="1000" value="0" step="1" aria-label="Spol">
+    <div class="tider"><span id="tid-gatt">0:00</span><span id="tid-igjen">-0:00</span></div>
+  </div>
+
+  <div class="kontroller">
+    <button class="ikon" id="forrige" aria-label="Forrige kapittel">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><path d="M6 5h2v14H6zM20 5v14L9 12z"/></svg>
+    </button>
+    <button class="ikon" id="tilbake" aria-label="15 sekunder tilbake">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 12a8.5 8.5 0 1 0 2.6-6.1"/><path d="M3 3.5v4h4"/></svg>
+      <span class="sek">15</span>
+    </button>
+    <button class="spill" id="spill" aria-label="Spill">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path id="spill-sti" d="M8 5.5v13l11-6.5z"/></svg>
+    </button>
+    <button class="ikon" id="frem" aria-label="15 sekunder frem">
+      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 12a8.5 8.5 0 1 1-2.6-6.1"/><path d="M21 3.5v4h-4"/></svg>
+      <span class="sek">15</span>
+    </button>
+    <button class="ikon" id="neste" aria-label="Neste kapittel">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><path d="M16 5h2v14h-2zM4 5v14l11-7z"/></svg>
+    </button>
+  </div>
+
+  <div class="verktoy">
+    <button id="fart"><b id="fart-tekst">1,0x</b>Hastighet</button>
+    <button id="kapitler-knapp"><b><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg></b>Kapitler</button>
+    <button id="sovn"><b id="sovn-tekst"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg></b>Sovetimer</button>
+  </div>
+
+  <div class="fremdrift-bok" id="bok-status"></div>
+  <div class="bunn-knapper">
+    <button id="last-ned-alle">Lagre alle klare kapitler på telefonen (for bruk uten nett)</button>
+    <button id="logg-ut">Logg ut</button>
+  </div>
+</main>
+
+<div id="ark-rot">
+  <div class="slor" id="slor"></div>
+  <div class="ark" role="dialog" aria-label="Kapitler">
+    <div class="hank"></div>
+    <h2>Kapitler</h2>
+    <ol id="liste"></ol>
+  </div>
+</div>
+
+<audio id="lyd" preload="metadata" playsinline></audio>
+
+<script>
+// Privat lydbok: alt på GitHub er kryptert (AES-256-GCM). Nøkkelen lages her i nettleseren av
+// passordet + hemmeligheten i den private lenken (#k=…), og forlater aldri telefonen.
+const $ = id => document.getElementById(id);
+const lyd = $('lyd');
+const FARTER = [0.75, 1, 1.25, 1.5, 1.75, 2];
+const SOVN = [0, 15, 30, 45, 60, 'kap'];
+let bok = null, valgt = null, harSpilt = false, sovnIndeks = 0, sovnTil = null;
+let nokkel = null, omslagUrl = null, ikonUrl = null, lydUrl = null;
+
+const lagre = (k, v) => { try { localStorage.setItem('lydbok:' + k, JSON.stringify(v)); } catch (e) {} };
+const hent = (k, d) => { try { const v = localStorage.getItem('lydbok:' + k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } };
+const b64 = {
+  til: buf => btoa(String.fromCharCode(...new Uint8Array(buf))),
+  fra: s => Uint8Array.from(atob(s), c => c.charCodeAt(0)),
+};
+
+// ---------------------------------------------------------------- kryptering
+
+async function lagNokkel(passord, hemmelighet) {
+  const oppsett = await (await fetch('salt.json', { cache: 'no-store' })).json();
+  const grunn = await crypto.subtle.importKey('raw', new TextEncoder().encode(passord + ':' + hemmelighet), 'PBKDF2', false, ['deriveBits']);
+  const bits = await crypto.subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-256', salt: b64.fra(oppsett.salt), iterations: oppsett.iter }, grunn, 256);
+  return bits;
+}
+async function importer(raa) { return crypto.subtle.importKey('raw', raa, 'AES-GCM', false, ['decrypt']); }
+async function dekrypter(buf) {
+  const data = new Uint8Array(buf);
+  return crypto.subtle.decrypt({ name: 'AES-GCM', iv: data.slice(0, 12) }, nokkel, data.slice(12));
+}
+async function hentKryptert(sti, fremdrift) {
+  const r = await fetch(sti);
+  if (!r.ok) throw new Error('Fant ikke ' + sti);
+  const total = +r.headers.get('Content-Length') || 0;
+  if (!fremdrift || !r.body || !total) return dekrypter(await r.arrayBuffer());
+  const leser = r.body.getReader(), deler = [];
+  let mottatt = 0;
+  for (;;) {
+    const { done, value } = await leser.read();
+    if (done) break;
+    deler.push(value); mottatt += value.length;
+    fremdrift(mottatt / total);
+  }
+  const alt = new Uint8Array(mottatt);
+  let o = 0; for (const d of deler) { alt.set(d, o); o += d.length; }
+  return dekrypter(alt.buffer);
+}
+
+// ---------------------------------------------------------------- innlogging
+
+async function startOpp() {
+  const m = location.hash.match(/k=([\w-]+)/);
+  if (m) lagre('hemmelighet', m[1]);
+  const lagret = hent('nokkel', null);
+  if (lagret) {
+    try { nokkel = await importer(b64.fra(lagret)); await sjekk(); return apne(); }
+    catch (e) { lagre('nokkel', null); }
+  }
+  visLogin();
+}
+async function sjekk() {
+  const tekst = new TextDecoder().decode(await hentKryptert('data/sjekk.bin'));
+  if (tekst !== 'lydbok-ok') throw new Error('feil');
+}
+function visLogin() {
+  $('login').hidden = false;
+  if (!hent('hemmelighet', null)) {
+    $('login-feil').textContent = 'Åpne siden fra den private lenken din (den med #k= på slutten).';
+    $('passord').disabled = true; $('logg-inn').disabled = true;
+  }
+}
+$('login-skjema').onsubmit = async e => {
+  e.preventDefault();
+  $('logg-inn').disabled = true; $('login-feil').textContent = 'Låser opp …';
+  try {
+    const raa = await lagNokkel($('passord').value, hent('hemmelighet', ''));
+    nokkel = await importer(raa);
+    await sjekk();
+    lagre('nokkel', b64.til(raa));
+    $('login').hidden = true;
+    apne();
+  } catch (err) {
+    $('login-feil').textContent = 'Feil passord.';
+    $('logg-inn').disabled = false;
+  }
+};
+$('logg-ut').onclick = () => { lagre('nokkel', null); location.reload(); };
+
+async function apne() {
+  $('login').hidden = true;
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+  await hentBok();
+  setInterval(hentBok, 5 * 60000);
+}
+
+// ---------------------------------------------------------------- bok
+
+function tid(s) {
+  s = Math.max(0, Math.floor(s || 0));
+  const t = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), sek = String(s % 60).padStart(2, '0');
+  return t ? `${t}:${String(m).padStart(2, '0')}:${sek}` : `${m}:${sek}`;
+}
+function varighetTekst(s) {
+  const m = Math.round(s / 60);
+  return m >= 60 ? `${Math.floor(m / 60)} t ${m % 60} min` : `${m} min`;
+}
+const kapNavn = k => k.nr === 0 ? 'Innledning' : (k.tittel === 'About the Author' ? 'Etterord' : `Kapittel ${k.nr}`);
+const klare = () => bok ? bok.kapitler.filter(k => k.fil) : [];
+
+async function hentBok() {
+  let ny;
+  try { ny = JSON.parse(new TextDecoder().decode(await hentKryptert('data/bok.bin?t=' + Date.now()))); }
+  catch (e) { if (!bok) $('bok-status').textContent = 'Får ikke kontakt — sjekk nettet.'; return; }
+  const forste = !bok;
+  bok = ny;
+  $('tittel').textContent = bok.tittel;
+  $('forfatter').textContent = bok.forfatter;
+  $('kicker').textContent = bok.undertittel || '';
+  $('leser').textContent = 'Lest av ' + bok.leser;
+  document.title = bok.tittel;
+  if (forste) {
+    try {
+      omslagUrl = URL.createObjectURL(new Blob([await hentKryptert(bok.omslag)], { type: 'image/jpeg' }));
+      ikonUrl = URL.createObjectURL(new Blob([await hentKryptert(bok.ikon)], { type: 'image/png' }));
+      $('omslag').style.backgroundImage = `url(${omslagUrl})`;
+    } catch (e) {}
+  }
+  const n = bok.kapitler.filter(k => k.fil && !k.pabegynt).length;
+  $('bok-status').textContent = `${n} av ${bok.kapitler.length} kapitler klare` + (bok.oppdatert ? ` · oppdatert ${bok.oppdatert}` : '');
+  if (valgt) {
+    const nyK = bok.kapitler.find(k => k.nr === valgt.nr);
+    if (nyK && nyK.fil !== valgt.fil && lyd.paused) { valgt = null; }  // kapitlet er blitt lengre — last inn ny versjon neste gang
+  }
+  if (!valgt) {
+    const siste = hent('siste', null);
+    const start = klare().find(k => k.nr === siste) || klare().find(k => k.nr >= 1) || klare()[0];
+    if (start) await velg(start.nr, false);
+  }
+  tegnListe();
+  tomTilstand();
+}
+
+function tomTilstand() {
+  const ingen = klare().length === 0;
+  $('tom').hidden = !ingen;
+  $('spill').disabled = ingen;
+  if (ingen) { $('tom').textContent = 'Ingen kapitler er klare ennå.'; $('kap-nr').textContent = '–'; $('kap-tittel').textContent = 'Ingen kapitler klare'; }
+}
+
+let lasterNr = null;
+async function velg(nr, spillNaa) {
+  const k = bok.kapitler.find(x => x.nr === nr);
+  if (!k || !k.fil) return;
+  if (valgt && valgt.nr === nr && valgt.fil === k.fil) { if (spillNaa) lyd.play(); return; }
+  lagrePosisjon();
+  lyd.pause();
+  valgt = k; lasterNr = nr;
+  $('kap-nr').textContent = kapNavn(k);
+  $('kap-tittel').textContent = k.tittel;
+  const pos = Math.max(0, Math.min(hent('pos:' + nr, 0) - 2, (k.varighet || 1e9) - 1));
+  visLagretPosisjon(pos, k.varighet);
+  $('spill').disabled = true;
+  $('laster').hidden = false; $('laster').textContent = 'Henter kapittel …';
+  let data;
+  try {
+    data = await hentKryptert(k.fil, p => { $('laster').textContent = `Henter kapittel … ${Math.round(p * 100)} %`; });
+  } catch (e) {
+    $('laster').textContent = 'Klarte ikke hente kapitlet. Er du på nett?';
+    $('spill').disabled = false; return;
+  }
+  if (lasterNr !== nr) return;  // byttet kapittel mens det lastet
+  $('laster').hidden = true; $('spill').disabled = false;
+  if (lydUrl) URL.revokeObjectURL(lydUrl);
+  lydUrl = URL.createObjectURL(new Blob([data], { type: 'audio/mpeg' }));
+  lyd.src = lydUrl;
+  lyd.playbackRate = hent('fart', 1);
+  lyd.addEventListener('loadedmetadata', () => {
+    if (pos) lyd.currentTime = pos;
+    lyd.playbackRate = hent('fart', 1);
+    oppdaterTid();
+  }, { once: true });
+  lyd.load();
+  if (spillNaa) { lyd.play().catch(() => {}); lagre('siste', nr); }
+  mediaSession();
+  tegnListe();
+}
+
+function visLagretPosisjon(pos, d) {
+  if (!d) return;
+  const p = pos / d * 1000;
+  $('spol').value = p;
+  $('spol').style.setProperty('--p', p / 10 + '%');
+  $('tid-gatt').textContent = tid(pos);
+  $('tid-igjen').textContent = '-' + tid(d - pos);
+}
+
+function lagrePosisjon() {
+  if (valgt && !isNaN(lyd.currentTime) && lyd.currentTime > 0 && lyd.readyState > 0) {
+    lagre('pos:' + valgt.nr, lyd.currentTime);
+    lagre('siste', valgt.nr);
+  }
+}
+
+let spoler = false;
+function oppdaterTid() {
+  const d = lyd.duration || (valgt && valgt.varighet) || 0, t = lyd.currentTime || 0;
+  if (!spoler && d) {
+    const p = t / d * 1000;
+    $('spol').value = p;
+    $('spol').style.setProperty('--p', p / 10 + '%');
+  }
+  const gatt = tid(t), igjen = '-' + tid(d - t);
+  if ($('tid-gatt').textContent !== gatt) $('tid-gatt').textContent = gatt;
+  if ($('tid-igjen').textContent !== igjen) $('tid-igjen').textContent = igjen;
+  if ('setPositionState' in (navigator.mediaSession || {}) && d && Date.now() - (oppdaterTid.sist || 0) > 1000) {
+    oppdaterTid.sist = Date.now();
+    try { navigator.mediaSession.setPositionState({ duration: d, position: Math.min(t, d), playbackRate: lyd.playbackRate }); } catch (e) {}
+  }
+}
+
+async function erLagretOffline(fil) {
+  try { return !!(await (await caches.open('lydbok')).match(new URL(fil, location.href).href)); } catch (e) { return false; }
+}
+
+async function tegnListe() {
+  if (!bok) return;
+  const liste = $('liste');
+  liste.innerHTML = '';
+  for (const k of bok.kapitler) {
+    const li = document.createElement('li'), b = document.createElement('button');
+    b.disabled = !k.fil;
+    if (valgt && valgt.nr === k.nr) b.className = 'na';
+    const pos = hent('pos:' + k.nr, 0);
+    let under;
+    if (k.pabegynt) under = `<span class="lager">Påbegynt · ${varighetTekst(k.varighet)} klart så langt</span>`;
+    else if (k.fil) under = varighetTekst(k.varighet) + (pos > 30 ? ` · ${Math.min(99, Math.round(pos / k.varighet * 100))} % hørt` : '');
+    else under = k.lages ? '<span class="lager">Lages nå</span>' : 'Ikke laget ennå';
+    b.innerHTML = `<span class="knr">${k.nr}</span><span class="kt"><div></div><small>${under}</small></span><span class="offline" hidden title="Lagret på telefonen">⤓</span>`;
+    b.querySelector('.kt div').textContent = k.tittel;
+    b.onclick = () => { harSpilt = true; lukkArk(); velg(k.nr, true); };
+    li.appendChild(b);
+    liste.appendChild(li);
+    if (k.fil) erLagretOffline(k.fil).then(ja => { if (ja) b.querySelector('.offline').hidden = false; });
+  }
+}
+
+$('last-ned-alle').onclick = async () => {
+  const knapp = $('last-ned-alle');
+  const filer = klare().map(k => k.fil);
+  knapp.disabled = true;
+  for (let i = 0; i < filer.length; i++) {
+    knapp.textContent = `Lagrer på telefonen … ${i + 1} av ${filer.length}`;
+    try { await fetch(filer[i]); } catch (e) {}
+  }
+  knapp.textContent = 'Alle klare kapitler er lagret på telefonen ✓';
+  knapp.disabled = false;
+  tegnListe();
+};
+
+function nesteKlare(retning) {
+  const liste = klare();
+  const i = liste.findIndex(k => valgt && k.nr === valgt.nr);
+  return liste[i + retning];
+}
+
+function mediaSession() {
+  if (!('mediaSession' in navigator) || !valgt) return;
+  navigator.mediaSession.metadata = new MediaMetadata({
+    title: `${kapNavn(valgt)}: ${valgt.tittel}`, artist: bok.forfatter, album: bok.tittel,
+    artwork: ikonUrl ? [{ src: ikonUrl, sizes: '512x512', type: 'image/png' }] : [],
+  });
+  const ms = navigator.mediaSession;
+  ms.setActionHandler('play', () => lyd.play());
+  ms.setActionHandler('pause', () => lyd.pause());
+  ms.setActionHandler('seekbackward', () => hopp(-15));
+  ms.setActionHandler('seekforward', () => hopp(15));
+  try { ms.setActionHandler('seekto', e => { lyd.currentTime = e.seekTime; }); } catch (e) {}
+  ms.setActionHandler('previoustrack', () => { const k = nesteKlare(-1); if (k) velg(k.nr, true); });
+  ms.setActionHandler('nexttrack', () => { const k = nesteKlare(1); if (k) velg(k.nr, true); });
+}
+
+function hopp(s) { lyd.currentTime = Math.max(0, Math.min((lyd.duration || 0) - 0.5, lyd.currentTime + s)); }
+
+// ---------------------------------------------------------------- knapper
+
+$('spill').onclick = () => { if (!valgt) return; harSpilt = true; lagre('siste', valgt.nr); lyd.paused ? lyd.play() : lyd.pause(); };
+$('tilbake').onclick = () => hopp(-15);
+$('frem').onclick = () => hopp(15);
+$('forrige').onclick = () => {
+  if (lyd.currentTime > 5) { lyd.currentTime = 0; return; }
+  const k = nesteKlare(-1); if (k) velg(k.nr, !lyd.paused);
+};
+$('neste').onclick = () => { const k = nesteKlare(1); if (k) velg(k.nr, !lyd.paused); };
+
+$('spol').addEventListener('input', e => {
+  spoler = true;
+  const d = lyd.duration || (valgt && valgt.varighet) || 0, v = e.target.value;
+  e.target.style.setProperty('--p', v / 10 + '%');
+  $('tid-gatt').textContent = tid(v / 1000 * d);
+  $('tid-igjen').textContent = '-' + tid(d - v / 1000 * d);
+});
+$('spol').addEventListener('change', e => { lyd.currentTime = e.target.value / 1000 * (lyd.duration || 0); spoler = false; });
+
+function visFart() {
+  const r = lyd.playbackRate;
+  $('fart-tekst').textContent = (Number.isInteger(r) ? r.toFixed(1) : String(r)).replace('.', ',') + 'x';
+}
+$('fart').onclick = () => {
+  const i = (FARTER.indexOf(hent('fart', 1)) + 1) % FARTER.length;
+  lagre('fart', FARTER[i]); lyd.playbackRate = FARTER[i]; visFart();
+};
+
+$('sovn').onclick = () => {
+  sovnIndeks = (sovnIndeks + 1) % SOVN.length;
+  const v = SOVN[sovnIndeks];
+  sovnTil = typeof v === 'number' && v ? Date.now() + v * 60000 : (v === 'kap' ? 'kap' : null);
+  $('sovn').classList.toggle('aktiv', !!sovnTil);
+  visSovn();
+};
+const MANE = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg>';
+function visSovn() {
+  const b = $('sovn-tekst');
+  if (!sovnTil) { b.innerHTML = MANE; return; }
+  b.textContent = sovnTil === 'kap' ? 'Slutt kap.' : Math.ceil((sovnTil - Date.now()) / 60000) + ' min';
+}
+setInterval(() => {
+  if (typeof sovnTil === 'number') {
+    if (Date.now() >= sovnTil) { lyd.pause(); sovnTil = null; sovnIndeks = 0; $('sovn').classList.remove('aktiv'); }
+    visSovn();
+  }
+}, 15000);
+
+function apneArk() { tegnListe(); $('ark-rot').classList.add('apen'); }
+function lukkArk() { $('ark-rot').classList.remove('apen'); }
+$('apne-kapitler').onclick = apneArk;
+$('kapitler-knapp').onclick = apneArk;
+$('slor').onclick = lukkArk;
+
+// ---------------------------------------------------------------- lyd-hendelser
+
+const STI_SPILL = 'M8 5.5v13l11-6.5z', STI_PAUSE = 'M6.5 5h4v14h-4zM13.5 5h4v14h-4z';
+function visKnapp() {
+  const spiller = !lyd.paused;
+  $('spill-sti').setAttribute('d', spiller ? STI_PAUSE : STI_SPILL);
+  $('spill').setAttribute('aria-label', spiller ? 'Pause' : 'Spill');
+}
+let animasjon = null;
+function animer() { oppdaterTid(); animasjon = lyd.paused ? null : requestAnimationFrame(animer); }
+lyd.addEventListener('timeupdate', () => { if (!animasjon) oppdaterTid(); });
+lyd.addEventListener('play', () => {
+  visKnapp(); harSpilt = true;
+  if (valgt) lagre('siste', valgt.nr);
+  if (!animasjon) animasjon = requestAnimationFrame(animer);
+});
+lyd.addEventListener('playing', visKnapp);
+lyd.addEventListener('pause', () => { visKnapp(); lagrePosisjon(); });
+lyd.addEventListener('seeked', () => { oppdaterTid(); lagrePosisjon(); });
+lyd.addEventListener('ratechange', visFart);
+lyd.addEventListener('ended', () => {
+  lagre('pos:' + valgt.nr, valgt.pabegynt ? lyd.currentTime : 0);
+  if (valgt.pabegynt) { $('kap-tittel').textContent = valgt.tittel + ' – resten er ikke laget ennå'; return; }
+  if (sovnTil === 'kap') { sovnTil = null; sovnIndeks = 0; $('sovn').classList.remove('aktiv'); visSovn(); return; }
+  const k = nesteKlare(1); if (k) velg(k.nr, true);
+});
+setInterval(() => { if (!lyd.paused) lagrePosisjon(); }, 3000);
+document.addEventListener('visibilitychange', lagrePosisjon);
+window.addEventListener('pagehide', lagrePosisjon);
+
+lyd.playbackRate = hent('fart', 1); visFart();
+startOpp();
+</script>
+</body>
+</html>
