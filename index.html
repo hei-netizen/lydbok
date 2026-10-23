@@ -150,6 +150,11 @@
   #login button { margin-top: 12px; width: 100%; padding: 14px; border-radius: 10px; border: 0; background: var(--aksent); color: #f6ecd6;
     font: 700 16px var(--kondensert); letter-spacing: .08em; text-transform: uppercase; cursor: pointer; }
   #login-feil { min-height: 20px; margin-top: 12px; color: var(--aksent); font-size: 14px; }
+  .spill.laster svg { opacity: 0; }
+  .spill.laster::after { content: ""; position: absolute; width: 30px; height: 30px; border-radius: 50%;
+    border: 3px solid rgba(246,236,214,.35); border-top-color: #f6ecd6; animation: snurr .8s linear infinite; }
+  .spill { position: relative; }
+  @keyframes snurr { to { transform: rotate(360deg); } }
 </style>
 </head>
 <body>
@@ -360,7 +365,7 @@ async function hentBok() {
   $('bok-status').textContent = `${n} av ${bok.kapitler.length} kapitler klare` + (bok.oppdatert ? ` · oppdatert ${bok.oppdatert}` : '');
   if (valgt) {
     const nyK = bok.kapitler.find(k => k.nr === valgt.nr);
-    if (nyK && nyK.fil !== valgt.fil && lyd.paused) { valgt = null; }  // kapitlet er blitt lengre — last inn ny versjon neste gang
+    if (nyK && nyK.fil !== valgt.fil && lyd.paused && spillerFil === valgt.fil) { lagrePosisjon(); valgt = null; }  // ny versjon av kapitlet
   }
   if (!valgt) {
     const siste = hent('siste', null);
@@ -378,42 +383,92 @@ function tomTilstand() {
   if (ingen) { $('tom').textContent = 'Ingen kapitler er klare ennå.'; $('kap-nr').textContent = '–'; $('kap-tittel').textContent = 'Ingen kapitler klare'; }
 }
 
+// ---------------------------------------------------------------- lydbuffer
+// Dekrypterte kapitler holdes klare i minnet (det du hører på + det neste), så bytte går nesten momentant.
+const buffer = new Map();      // fil -> Promise<blob-url>
+const nedlasting = {};         // fil -> andel lastet ned (0–1)
+const STILLE = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YQAAAAA=';
+let spillerFil = null;         // hvilket kapittel <audio> faktisk har lastet
+let aktivUrl = null;           // blob-adressen til det kapitlet
+
+function hentLyd(k) {
+  if (!buffer.has(k.fil)) {
+    nedlasting[k.fil] = 0;
+    const p = hentKryptert(k.fil, a => { nedlasting[k.fil] = a; })
+      .then(data => URL.createObjectURL(new Blob([data], { type: 'audio/mpeg' })));
+    p.catch(() => buffer.delete(k.fil));
+    buffer.set(k.fil, p);
+  }
+  return buffer.get(k.fil);
+}
+function ryddBuffer(behold) {  // slipp minnet til kapitler vi ikke trenger
+  for (const [fil, p] of buffer) {
+    if (!behold.includes(fil)) { buffer.delete(fil); p.then(u => URL.revokeObjectURL(u)).catch(() => {}); }
+  }
+}
+function forbered(k) {  // last ned og dekrypter neste kapittel i bakgrunnen
+  const i = klare().findIndex(x => x.nr === k.nr);
+  const neste = klare()[i + 1];
+  if (neste) setTimeout(() => { if (valgt && valgt.nr === k.nr) hentLyd(neste).catch(() => {}); }, 4000);
+  ryddBuffer([k.fil, neste && neste.fil, (klare()[i - 1] || {}).fil]);
+}
+
+// iPhone tillater bare lyd som startes rett etter et trykk. Ved trykk starter vi en stille lyd med en gang,
+// så avspilleren er «låst opp» når kapitlet er klart et øyeblikk senere.
+function laasOpp() {
+  if (lyd.paused) { lagrePosisjon(); spillerFil = null; lyd.src = STILLE; lyd.play().catch(() => {}); }
+}
+
 let lasterNr = null;
 async function velg(nr, spillNaa) {
   const k = bok.kapitler.find(x => x.nr === nr);
   if (!k || !k.fil) return;
-  if (valgt && valgt.nr === nr && valgt.fil === k.fil) { if (spillNaa) lyd.play(); return; }
+  if (valgt && valgt.nr === nr && valgt.fil === k.fil && spillerFil === k.fil) { if (spillNaa) lyd.play().catch(() => {}); return; }
   lagrePosisjon();
-  lyd.pause();
+  const varSpilling = !lyd.paused;
+  if (!spillNaa) lyd.pause();
   valgt = k; lasterNr = nr;
   $('kap-nr').textContent = kapNavn(k);
   $('kap-tittel').textContent = k.tittel;
   const pos = Math.max(0, Math.min(hent('pos:' + nr, 0) - 2, (k.varighet || 1e9) - 1));
   visLagretPosisjon(pos, k.varighet);
-  $('spill').disabled = true;
-  $('laster').hidden = false; $('laster').textContent = 'Henter kapittel …';
-  let data;
+  mediaSession();
+  tegnListe();
+  // vis «henter» bare hvis det tar tid (ferdig dekrypterte kapitler er klare med en gang)
+  const visLaster = setTimeout(() => { if (lasterNr === nr) $('spill').classList.add('laster'); }, 150);
+  const fremdrift = setInterval(() => {
+    if (lasterNr !== nr) return;
+    const a = nedlasting[k.fil];
+    $('laster').hidden = false;
+    $('laster').textContent = a !== undefined && a < 1 ? `Henter kapittel … ${Math.round(a * 100)} %` : 'Gjør klart …';
+  }, 400);
+  let url;
   try {
-    data = await hentKryptert(k.fil, p => { $('laster').textContent = `Henter kapittel … ${Math.round(p * 100)} %`; });
+    url = await hentLyd(k);
   } catch (e) {
-    $('laster').textContent = 'Klarte ikke hente kapitlet. Er du på nett?';
-    $('spill').disabled = false; return;
+    clearTimeout(visLaster); clearInterval(fremdrift);
+    $('spill').classList.remove('laster');
+    $('laster').hidden = false;
+    $('laster').textContent = 'Klarte ikke hente kapitlet. Er du på nett? Trykk på kapitlet for å prøve igjen.';
+    return;
   }
-  if (lasterNr !== nr) return;  // byttet kapittel mens det lastet
-  $('laster').hidden = true; $('spill').disabled = false;
-  if (lydUrl) URL.revokeObjectURL(lydUrl);
-  lydUrl = URL.createObjectURL(new Blob([data], { type: 'audio/mpeg' }));
-  lyd.src = lydUrl;
+  clearTimeout(visLaster); clearInterval(fremdrift);
+  if (lasterNr !== nr) return;  // du byttet kapittel mens det lastet
+  $('spill').classList.remove('laster');
+  $('laster').hidden = true;
+  spillerFil = k.fil;
+  aktivUrl = url;
+  lyd.src = url;
   lyd.playbackRate = hent('fart', 1);
   lyd.addEventListener('loadedmetadata', () => {
+    if (spillerFil !== k.fil) return;
     if (pos) lyd.currentTime = pos;
     lyd.playbackRate = hent('fart', 1);
     oppdaterTid();
   }, { once: true });
   lyd.load();
-  if (spillNaa) { lyd.play().catch(() => {}); lagre('siste', nr); }
-  mediaSession();
-  tegnListe();
+  if (spillNaa || varSpilling) { lyd.play().catch(() => visKnapp()); lagre('siste', nr); }
+  forbered(k);
 }
 
 function visLagretPosisjon(pos, d) {
@@ -426,7 +481,7 @@ function visLagretPosisjon(pos, d) {
 }
 
 function lagrePosisjon() {
-  if (valgt && !isNaN(lyd.currentTime) && lyd.currentTime > 0 && lyd.readyState > 0) {
+  if (valgt && spillerFil === valgt.fil && lyd.src === aktivUrl && !isNaN(lyd.currentTime) && lyd.currentTime > 0 && lyd.readyState > 0) {
     lagre('pos:' + valgt.nr, lyd.currentTime);
     lagre('siste', valgt.nr);
   }
@@ -434,6 +489,7 @@ function lagrePosisjon() {
 
 let spoler = false;
 function oppdaterTid() {
+  if (!valgt || spillerFil !== valgt.fil) return;
   const d = lyd.duration || (valgt && valgt.varighet) || 0, t = lyd.currentTime || 0;
   if (!spoler && d) {
     const p = t / d * 1000;
@@ -468,7 +524,7 @@ async function tegnListe() {
     else under = k.lages ? '<span class="lager">Lages nå</span>' : 'Ikke laget ennå';
     b.innerHTML = `<span class="knr">${k.nr}</span><span class="kt"><div></div><small>${under}</small></span><span class="offline" hidden title="Lagret på telefonen">⤓</span>`;
     b.querySelector('.kt div').textContent = k.tittel;
-    b.onclick = () => { harSpilt = true; lukkArk(); velg(k.nr, true); };
+    b.onclick = () => { harSpilt = true; lukkArk(); if (!(valgt && valgt.nr === k.nr && spillerFil === k.fil)) laasOpp(); velg(k.nr, true); };
     li.appendChild(b);
     liste.appendChild(li);
     if (k.fil) erLagretOffline(k.fil).then(ja => { if (ja) b.querySelector('.offline').hidden = false; });
@@ -510,11 +566,16 @@ function mediaSession() {
   ms.setActionHandler('nexttrack', () => { const k = nesteKlare(1); if (k) velg(k.nr, true); });
 }
 
-function hopp(s) { lyd.currentTime = Math.max(0, Math.min((lyd.duration || 0) - 0.5, lyd.currentTime + s)); }
+function hopp(s) { if (!valgt || spillerFil !== valgt.fil) return; lyd.currentTime = Math.max(0, Math.min((lyd.duration || 0) - 0.5, lyd.currentTime + s)); }
 
 // ---------------------------------------------------------------- knapper
 
-$('spill').onclick = () => { if (!valgt) return; harSpilt = true; lagre('siste', valgt.nr); lyd.paused ? lyd.play() : lyd.pause(); };
+$('spill').onclick = () => {
+  if (!valgt) return;
+  harSpilt = true; lagre('siste', valgt.nr);
+  if (spillerFil !== valgt.fil) { laasOpp(); velg(valgt.nr, true); return; }  // kapitlet laster fortsatt
+  lyd.paused ? lyd.play().catch(() => {}) : lyd.pause();
+};
 $('tilbake').onclick = () => hopp(-15);
 $('frem').onclick = () => hopp(15);
 $('forrige').onclick = () => {
@@ -522,6 +583,7 @@ $('forrige').onclick = () => {
   const k = nesteKlare(-1); if (k) velg(k.nr, !lyd.paused);
 };
 $('neste').onclick = () => { const k = nesteKlare(1); if (k) velg(k.nr, !lyd.paused); };
+$('spol').addEventListener('pointerdown', () => { if (valgt && spillerFil !== valgt.fil) $('spol').blur(); });
 
 $('spol').addEventListener('input', e => {
   spoler = true;
@@ -530,7 +592,11 @@ $('spol').addEventListener('input', e => {
   $('tid-gatt').textContent = tid(v / 1000 * d);
   $('tid-igjen').textContent = '-' + tid(d - v / 1000 * d);
 });
-$('spol').addEventListener('change', e => { lyd.currentTime = e.target.value / 1000 * (lyd.duration || 0); spoler = false; });
+$('spol').addEventListener('change', e => {
+  spoler = false;
+  if (!valgt || spillerFil !== valgt.fil) { lagre('pos:' + valgt.nr, e.target.value / 1000 * (valgt.varighet || 0)); return; }
+  lyd.currentTime = e.target.value / 1000 * (lyd.duration || 0);
+});
 
 function visFart() {
   const r = lyd.playbackRate;
@@ -588,6 +654,7 @@ lyd.addEventListener('pause', () => { visKnapp(); lagrePosisjon(); });
 lyd.addEventListener('seeked', () => { oppdaterTid(); lagrePosisjon(); });
 lyd.addEventListener('ratechange', visFart);
 lyd.addEventListener('ended', () => {
+  if (!valgt || spillerFil !== valgt.fil) return;
   lagre('pos:' + valgt.nr, valgt.pabegynt ? lyd.currentTime : 0);
   if (valgt.pabegynt) { $('kap-tittel').textContent = valgt.tittel + ' – resten er ikke laget ennå'; return; }
   if (sovnTil === 'kap') { sovnTil = null; sovnIndeks = 0; $('sovn').classList.remove('aktiv'); visSovn(); return; }
